@@ -1,10 +1,7 @@
-## Django Point of Sale (POS) 💸
-
-A Point of Sale web app for businesses built with Python and Django for learning purposes.
+### enfiproV2 ###
 
 <a><img src="https://user-images.githubusercontent.com/95726794/212497770-a3e241e7-0c77-4573-9d22-8f0ae813e958.png" width="70%" heigth="70%"></a>
 <br></br>
-<a><img src="https://user-images.githubusercontent.com/95726794/212497784-80a48617-759c-4415-aa1c-4591b9892c3d.png" width="70%" heigth="70%"></a>
 
 ## Table of Contents:
 - [Features](#features)
@@ -44,11 +41,11 @@ A Point of Sale web app for businesses built with Python and Django for learning
     
   1. Clone or download the repository:
 
-  ` git clone https://github.com/betofleitass/django_point_of_sale`
+  ` git clone https://github.com/yi_it/enfiproV2`
 
   2. Go to the project directory
 
-  ` cd django_point_of_sale`
+  ` cd enfiproV2`
 
   3. Create a virtual environment :
 
@@ -94,7 +91,7 @@ A Point of Sale web app for businesses built with Python and Django for learning
 ## Run it locally
 After restarting your computer
 
-1. Go to the project directory: `cd django_point_of_sale`
+1. Go to the project directory: `cd enfiproV2`
 
 2. Activate the virtual enviroment
 
@@ -107,7 +104,7 @@ After restarting your computer
     ```
     source venv/bin/activate
     ```
-3. Go to the django_pos folder: `cd django_pos`
+3. Go to the enfiproV2 folder: `cd enfiproV2`
 
 4. Make database migrations:  
   `python manage.py makemigrations` and 
@@ -120,7 +117,7 @@ After restarting your computer
     password: admin,
     email: admin@admin`
 
-7. Run the server: `python manage.py runserver`
+7. Run the server: `python manage.py runserver 0.0.0.0:8000`
 
 8. Open a browser and go to: `http://127.0.0.1:8000/`
 
@@ -141,10 +138,10 @@ Contributions are always welcome!
 
 ## Authors
 
-- [@betofleitass](https://www.github.com/betofleitass)
+- [@yi_it](https://www.github.com/yi_it)
 
 ##  License
 
 This project is under [MIT License.](https://choosealicense.com/licenses/mit/)
 
-[Back to top ⬆️](#django-point-of-sale-pos-)
+[Back to top ⬆️](#enfiproV2)
