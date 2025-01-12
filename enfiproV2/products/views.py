@@ -112,7 +112,8 @@ def products_add_view(request):
           print(last_product.id)
           product = Product.objects.get(id=(last_product.id))
           fields = [
-             {"name": "urun_kod", "label": "Ürün Kodu", "type": "text", "value": str(int(product.urun_kod) + 1)},
+            #{"name": "urun_kod", "label": "Ürün Kodu", "type": "text", "value": str(int(product.urun_kod) + 1)}
+            {"name": "urun_kod", "label": "Ürün Kodu", "type": "text", "value": product.urun_kod},
             {"name": "urun_ismi1", "label": "Ürün İsmi 1", "type": "text", "value": product.urun_ismi1},
             {"name": "urun_ismi2", "label": "Ürün İsmi 2", "type": "text", "value": product.urun_ismi2},
             {"name": "urun_grup", "label": "Ürün Grubu", "type": "text", "value": product.urun_grup},
@@ -417,7 +418,9 @@ def get_products(request):
             "id": product.id,
             "urun_ismi1": product.urun_ismi1,
             "urun_kod": product.urun_kod,
-            "category": product.category.name
+            "category": product.category.name,
+            "urun_barkod": product.urun_barkod,            
+            "urun_barkod": product.urun_barkod if product.urun_barkod else "Barkod Yok"
         }
         for product in products
     ]

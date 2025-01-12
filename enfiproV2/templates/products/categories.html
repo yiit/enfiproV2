@@ -6,8 +6,8 @@
 <!-- Specific Page CSS goes HERE  -->
 {% block stylesheets %}
 <!-- Datatables -->
-<link href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css ' %}" rel="stylesheet">
-<link href="{% static 'css/pagination_buttons.css ' %}" rel="stylesheet">
+<link href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css' %}" rel="stylesheet">
+<link href="{% static 'css/pagination_buttons.css' %}" rel="stylesheet">
 {% endblock stylesheets %}
 
 <!-- Page Heading -->
@@ -37,11 +37,12 @@
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th style="width:7%">#</th>
+                            <th style="width:7%">Sıra No</th>
                             <th>Kategori İsmi</th>
                             <th>Kategori Tanımı</th>
                             <th class="text-center" style="width:15%">Durum</th>
-                            <th class="text-center" style="width:15%">Eylem</th>
+                            <th class="text-center" style="width:15%">Düzenle</th>
+                            <th class="text-center" style="width:15%">Sil</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -67,6 +68,8 @@
                                         <i class="fas fa-pen"></i>
                                     </button>
                                 </a>
+                            </td>
+                            <td class="text-center">
                                 <!--Delete modal-->
                                 <!-- Button trigger modal -->
                                 <a class="text-decoration-none">
@@ -74,7 +77,7 @@
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </a>
-                                    
+                            </td>
                                 <!-- Modal -->
                                 <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
                                     <div class="modal-dialog">

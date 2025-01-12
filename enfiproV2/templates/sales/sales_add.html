@@ -7,6 +7,7 @@
 {% block stylesheets %}
 <!-- Datatables -->
 <link href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css' %}" rel="stylesheet">
+<link href="{% static 'css/pagination_buttons.css' %}" rel="stylesheet">
 <!--Select2 CSS-->
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css">
@@ -107,28 +108,6 @@
     gap: 10px;
 }
 
-#all-products .btn {
-    width: 160px;
-    height: 90px;
-    text-align: center;
-    background: linear-gradient(145deg, #4a90e2, #357ab7);
-    color: white;
-    border-radius: 10px;
-    box-shadow: 3px 3px 6px #aaaaaa, -3px -3px 6px #ffffff;
-    font-size: 14px;
-    font-weight: bold;
-    transition: transform 0.2s, box-shadow 0.2s;
-    white-space: normal;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding: 5px;
-    border: 1px solid #007bff;
-}
-
 #all-products .btn:hover {
     transform: scale(1.05);
     box-shadow: 5px 5px 10px #aaaaaa, -5px -5px 10px #ffffff;
@@ -163,7 +142,55 @@ select, button {
     margin-right: auto;
 }
 
+#all-products-container {
+    max-height: 400px; /* Maksimum yükseklik */
+    overflow-y: auto;  /* Yalnızca dikey kaydırma */
+    border: 1px solid #ddd; /* Çerçeve */
+    border-radius: 8px; /* Köşeleri yuvarlat */
+    padding: 10px; /* İçerik boşluğu */
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1); /* Hafif gölge */
+    background-color: #f9f9f9; /* Arka plan */
+}
 
+#all-products .btn {
+    position: relative;
+    width: 180px;
+    height: 95px;
+    text-align: center;
+    background: linear-gradient(145deg, #4a90e2, #357ab7);
+    color: white;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: bold;
+    display: flex;
+    justify-content: center; /* Dikey hizalama */
+    align-items: flex-end; /* Yatayda alta hizalama */
+    flex-direction: row; /* İçeriği dikeyde sıralamak için */
+    border: 1px solid #007bff;
+    transition: transform 0.2s, box-shadow 0.2s;
+    padding: 10px; /* İçerik boşluğu */
+}
+
+
+
+#all-products .btn .badge {
+    position: absolute;
+    top: 5px; /* Baloncuğu biraz aşağı indir */
+    right: 5px; /* Yatayda sağa hizala */
+    background-color: red;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    border-radius: 20px;
+    padding: 5px 10px;
+}
+
+#all-products .btn span {
+    display: block;
+    text-align: center; /* Yazıyı ortala */
+    margin-top: auto; /* Alt tarafa doğru hizala */
+    margin-bottom: 5px; /* Alt boşluk */
+}
 
 </style>
 
@@ -189,8 +216,10 @@ select, button {
 <!-- Gizli inputlar -->
 <input type="hidden" id="selected-customer-id" name="selected_customer_id"> <!-- Müşteri ID -->
 <input type="hidden" id="selected-customer-name" name="selected_customer_name">
+<input type="hidden" id="selected-customer-name2" name="selected_customer_name2">
 <input type="hidden" id="selected-product-name" name="selected_product_name">
 <input type="hidden" id="selected-product-code" name="selected_product_code">
+<input type="hidden" id="selected-customer-address" name="selected_customer_address">
 
     <div class="row mt-3">
         <div class="card col-md-12">
@@ -220,10 +249,20 @@ select, button {
                                 </table>
                             </div>
 
-                            <!-- All products buttons -->
-                            <div id="all-products" class="mt-3 d-flex flex-wrap">
-                                <!-- Buttons will be dynamically added here -->
+                            <div class="form-group text-center">
+                                <input type="text" id="product-filter" class="form-control" placeholder="Ürün Ara...">
                             </div>
+                            <div id="all-products-container" class="mt-3">
+                                <div id="all-products">
+                                    {% for product in products %}
+                                    <button class="btn btn-primary m-2" data-id="{{ product.id }}" data-isim="{{ product.urun_ismi1 }}" data-kod="{{ product.urun_kod }}">
+                                        {{ product.urun_ismi1 }}
+                                        <span class="badge">{{ product.urun_barkod }}</span>
+                                    </button>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            
                         </div>
                     </div>
                     <!--End Left column-->
@@ -247,6 +286,10 @@ select, button {
                                         {% endfor %}
                                     </select>
                                 </div>
+                                <div id="customer-details" class="mt-3">
+                                    <!-- Müşteri detayları burada görünecek -->
+                                </div>
+                                
                                 <!-- <div class="table-container">
                                     <table id="selected-products-table" class="table table-bordered">
                                         <thead>
@@ -410,6 +453,235 @@ select, button {
         },
     };
 
+    $(document).ready(function () {
+    // Select2 initialization for customers
+    $('#searchbox_customers').select2({
+        placeholder: "Müşteri Seçiniz",
+        allowClear: true,
+    });
+    $('#searchbox_customers').on('change', function () {
+    const selectedCustomerId = $(this).val(); // Seçilen müşteri ID'sini al
+
+    if (!selectedCustomerId) {
+        // Eğer müşteri seçimi kaldırıldıysa tüm alanları temizle
+        $('#selected-customer-id').val('');
+        $('#selected-customer-name').val('');
+        $('#selected-customer-name2').val('');
+        $('#selected-customer-address').val('');
+        $('#customer-details').empty();
+        return;
+    }
+
+    // AJAX ile müşteri detaylarını al
+    $.ajax({
+        url: '/sales/get_customer_info/', // Backend endpoint'i
+        type: 'POST',
+        data: {
+            customer_id: selectedCustomerId,
+            csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val(), // CSRF token
+        },
+        success: function (response) {
+            if (response.success) {
+                const customerDetails = response.data;
+
+                // Gizli inputlara müşteri bilgilerini yaz
+                $('#selected-customer-id').val(selectedCustomerId);
+                $('#selected-customer-name').val(customerDetails.first_name);
+                $('#selected-customer-name2').val(customerDetails.last_name);
+                $('#selected-customer-address').val(customerDetails.address);
+
+                // DOM'a müşteri detaylarını yaz
+                $('#customer-details').html(`
+                    <p><strong>Ad:</strong> ${customerDetails.first_name}</p>
+                    <p><strong>Adres:</strong> ${customerDetails.last_name} ${customerDetails.address}</p>
+                `);
+
+                console.log('Müşteri ID:', selectedCustomerId);
+                console.log('Müşteri Adı:', customerDetails.first_name);
+                console.log('Müşteri Adresi:', customerDetails.address);
+            } else {
+                alert(response.message); // Hata mesajını göster
+            }
+        },
+        error: function () {
+            alert('Müşteri bilgileri alınamadı. Lütfen tekrar deneyin.');
+        },
+    });
+});
+
+
+/*$('#searchbox_customers').on('change', function () {
+    const selectedCustomerId = $(this).val();
+    const selectedCustomerName = $(this).find('option:selected').text();
+
+    // Gizli inputlara müşteri bilgilerini yaz
+    $('#selected-customer-id').val(selectedCustomerId);
+    $('#selected-customer-name').val(selectedCustomerName);
+
+    console.log('Müşteri ID:', selectedCustomerId);
+    console.log('Müşteri Adı:', selectedCustomerName);
+});*/
+
+    $(document).ready(function () {
+    // Tax percentage touchspin
+    $("input[name='tax_percentage']").TouchSpin({
+        min: 0,
+        max: 100,
+        step: 1,
+        decimals: 2,
+        boostat: 5,
+        maxboostedstep: 10,
+        postfix: '%'
+    }).on('change', function () {
+        sale.calculate_sale();
+    });
+
+    // Select2 customers
+    $('#searchbox_customers').select2({
+        placeholder: "Müşteri Seçiniz",
+        allowClear: true,
+    });
+
+    // Tables Events
+    $('#table_products tbody').on('click', 'a[rel="delete"]', function () {
+        // When a product is deleted
+        var tr = tblProducts.cell($(this).closest('td, li')).index();
+        product_urun_ismi = (tblProducts.row(tr.row).data().isim);
+
+        Swal.fire({
+            customClass: {
+                confirmButton: 'ml-3 btn btn-danger',
+                cancelButton: 'btn btn-info'
+            },
+            buttonsStyling: false,
+            title: "Are you sure you want to delete this product from the sale?",
+            text: product_urun_ismi,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Delete',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true,
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Delete the product
+                sale.items.products.splice(tr.row, 1);
+                sale.list_product();
+                Swal.fire('The product was eliminated!', '', 'success');
+            }
+        });
+    }).on('change keyup', 'input[name="quantity"]', function () {
+        var quantity = parseInt($(this).val());
+        var tr = tblProducts.cell($(this).closest('td, li')).index();
+        sale.items.products[tr.row].quantity = quantity;
+        sale.calculate_sale();
+        $('td:eq(4)', tblProducts.row(tr.row).node()).html(sale.items.products[tr.row].total_product);
+    });
+
+    // Delete all products
+    $('.deleteAll').on('click', function () {
+        // If there are no products doesn't do anything
+        if (sale.items.products.length === 0) return false;
+
+        // Alert the user
+        Swal.fire({
+            customClass: {
+                confirmButton: 'ml-3 btn btn-danger',
+                cancelButton: 'btn btn-info'
+            },
+            buttonsStyling: false,
+            title: "Are you sure you want to delete all products from the sale?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Delete all',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true,
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Delete all products
+                sale.items.products = [];
+                sale.list_product();
+                Swal.fire('All products were eliminated!', '', 'success');
+            }
+        });
+    });
+
+    // Select2 products searchbox
+    var csrftoken = jQuery("[name=csrfmiddlewaretoken]").val();
+
+    function csrfSafeMethod(method) {
+        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+    }
+
+    $.ajaxSetup({
+        beforeSend: function (xhr, settings) {
+            if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                xhr.setRequestHeader("X-CSRFToken", csrftoken);
+            }
+        }
+    });
+
+    $('#searchbox_products').select2({
+        delay: 250,
+        placeholder: 'Ürün Arama',
+        minimumInputLength: 1,
+        allowClear: true,
+        templateResult: template_product_searchbox,
+        ajax: {
+            url: "{% url 'products:get_products' %}",
+            type: 'POST',
+            data: function (params) {
+                var queryParameters = {
+                    term: params.term,
+                };
+                return queryParameters;
+            },
+            processResults: function (data) {
+                return {
+                    results: data
+                };
+            },
+        }
+    }).on('select2:select', function (e) {
+        var data = e.params.data;
+        data.number = number;
+        number++;
+        sale.add_product(data);
+        $(this).val('').trigger('change.select2');
+    });
+
+    tblProducts = $('#table_products').DataTable({
+        columnDefs: [
+            {
+                targets: [-1], // column index (start from 0)
+                orderable: false, // set orderable false for selected columns
+            }
+        ],
+    });
+
+    function template_product_searchbox(repo) {
+        if (repo.loading) {
+            return repo.text;
+        }
+
+        var option = $(
+            `<div class="wrapper container">
+                <div class="row">
+                    <div class="col-lg-11 text-left shadow-sm">
+                        <p style="margin-bottom: 5px;">
+                            <b>Name:</b> ${repo.text} | Category: <span class='btn-info px-2'>${repo.category}</span><br>
+                            <b>Price:</b> <span class="btn-success px-2">${repo.price}</span>
+                        </p>
+                    </div>
+                </div>
+            </div>`
+        );
+        return option;
+    }
+});
+
+
+
+/*
     $(document).ready(function() {
 
         //Tax percentage touchspin
@@ -484,7 +756,7 @@ select, button {
                 sale.calculate_sale();
                 // Find the row to update the product total
                 $('td:eq(4)', tblProducts.row(tr.row).node()).html(sale.items.products[tr.row].total_product);
-        });
+        });*/
 
         // Delete all products
         $('.deleteAll').on('click', function(){
@@ -1011,14 +1283,16 @@ function extractNumericData(data) {
 
 
 document.getElementById('print-button').addEventListener('click', async (event) => {
-    event.preventDefault(); // Sayfanın yenilenmesini engelle
+    event.preventDefault();
 
     const customerName = document.getElementById('selected-customer-name').value;
+    const customerName2 = document.getElementById('selected-customer-name2').value;
+    const customerAddress = document.getElementById('selected-customer-address').value;
     const productName = document.getElementById('selected-product-name').value;
     const productCode = document.getElementById('selected-product-code').value;
-    const customText = document.getElementById('custom-text').value; // Parti numarasını al
+    const customText = document.getElementById('custom-text').value;
 
-    if (!lastPrintedWeight || !customerName || !productName || !productCode || !customText) {
+    if (!customerName || !customerAddress || !productName || !productCode || !customText) {
         alert('Eksik bilgiler mevcut. Lütfen tüm alanları doldurduğunuzdan emin olun.');
         return;
     }
@@ -1026,15 +1300,17 @@ document.getElementById('print-button').addEventListener('click', async (event) 
     sendToPrinterWithData({
         weight: lastPrintedWeight.toString(),
         customerName: customerName,
+        customerName2: customerName2,
+        customerAddress: customerAddress,
         productName: productName,
         productCode: productCode,
-        customText: customText, // Parti numarasını ekle
+        customText: customText,
     });
 });
 
-async function sendToPrinterWithData(printData) {
-    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
+async function sendToPrinterWithData(printData) {
     try {
         const response = await fetch('/sales/print/', {
             method: 'POST',
@@ -1054,14 +1330,12 @@ async function sendToPrinterWithData(printData) {
 
         const data = await response.json();
         console.log('Başarılı:', data.message);
-        alert('Etiket yazdırma başarılı: ' + data.message);
+        //alert('Etiket yazdırma başarılı: ' + data.message);
     } catch (error) {
         console.error('Yazdırma sırasında bir hata oluştu:', error.message);
         alert('Yazdırma sırasında bir hata oluştu.');
     }
 }
-
-
 
 /*document.getElementById('print-button').addEventListener('click', async () => {
     sendToPrinterWithWeight(lastPrintedWeight.toString());
@@ -1142,8 +1416,9 @@ $(document).ready(function () {
                 // Ürünleri buton olarak ekle
                 data.forEach(product => {
                     const productButton = $(`
-                        <button class="btn btn-primary m-2" data-id="${product.id}" data-isim="${product.urun_ismi1}" data-kod="${product.urun_kod}">
-                            ${product.urun_ismi1} (${product.urun_kod})
+                        <button class="btn btn-primary m-2" data-id="${product.id}" data-isim="${product.urun_ismi1}" data-kod="${product.urun_kod}" data-barkod="{{ product.urun_barkod|default:'Barkod Yok' }}">
+                            ${product.urun_ismi1}
+                            <span class="badge">${product.urun_barkod}</span>
                         </button>
                     `);
 
@@ -1153,6 +1428,7 @@ $(document).ready(function () {
                             id: $(this).data('id'),
                             isim: $(this).data('isim'),
                             kod: $(this).data('kod'),
+                            barkod: $(this).data('barkod'),
                             quantity: 1,
                         };
                         console.log('Ürün seçildi:', productData);
@@ -1219,6 +1495,7 @@ $(document).on('click', '#all-products .btn', function (event) {
         id: $(this).data('id'),
         isim: $(this).data('isim'),
         kod: $(this).data('kod'),
+        barkod: $(this).data('barkod'),
         quantity: 1,
         weight: weightValue.trim(), // Weight bilgisini ekle
         price: Math.random() * 100 + 1, // Rastgele fiyat, test için
@@ -1262,6 +1539,29 @@ $(document).on('input', '.quantity-input', function () {
     weightValueElement.textContent = formattedValue;
     unitElement.textContent = 'kg';
 }*/
+
+$(document).ready(function () {
+    $('#product-filter').on('input', function () {
+        const filterText = $(this).val().toUpperCase(); // Kullanıcının girdiği metni büyük harfe çevir
+        $(this).val(filterText); // Arama kutusundaki metni de büyük harfe çevir
+
+        $('#all-products .btn').each(function () {
+            // Butonun tüm metin ve data-* içeriklerini büyük harfe çevirerek birleştir
+            const buttonText = $(this).text().toUpperCase(); // Buton içeriği
+            const buttonDataIsim = $(this).data('isim') ? $(this).data('isim').toUpperCase() : ""; // data-isim özelliği
+            const buttonDataKod = $(this).data('kod') ? $(this).data('kod').toUpperCase() : ""; // data-kod özelliği
+            const buttonDataBarKod = $(this).data('barkod') ? $(this).data('barkod').toUpperCase() : ""; // data-kod özelliği
+            const combinedText = buttonText + " " + buttonDataIsim + " " + buttonDataKod + " " + buttonDataBarKod;; // Tüm metinleri birleştir
+
+            // Filtreleme
+            if (combinedText.includes(filterText)) {
+                $(this).show(); // Filtreyle eşleşiyorsa butonu göster
+            } else {
+                $(this).hide(); // Filtreyle eşleşmiyorsa butonu gizle
+            }
+        });
+    });
+});
 
 </script>
 {% endblock javascripts %}
