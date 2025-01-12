@@ -41,7 +41,7 @@
     
   1. Clone or download the repository:
 
-  ` git clone https://github.com/yi_it/enfiproV2`
+  ` git clone https://github.com/yiit/enfiproV2`
 
   2. Go to the project directory
 
@@ -138,7 +138,7 @@ Contributions are always welcome!
 
 ## Authors
 
-- [@yi_it](https://www.github.com/yi_it)
+- [@yiit](https://www.github.com/yiit)
 
 ##  License
 
