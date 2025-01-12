@@ -1,6 +1,6 @@
 ### enfiproV2 ###
 
-<a><img src="https://user-images.githubusercontent.com/95726794/212497770-a3e241e7-0c77-4573-9d22-8f0ae813e958.png" width="70%" heigth="70%"></a>
+<a><img src="https://github.com/yiit/enfiproV2/blob/main/screenshots/dashboard.png" width="70%" heigth="70%"></a>
 <br></br>
 
 ## Table of Contents:
