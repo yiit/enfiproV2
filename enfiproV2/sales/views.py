@@ -10,8 +10,10 @@ from django_pos import settings
 from django.template.loader import get_template
 from customers.models import Customer
 from products.models import Product
-from weasyprint import HTML, CSS
+#from weasyprint import HTML, CSS
 from .models import Sale, SaleDetail, PrintLog
+
+#import chardet
 
 
 import subprocess
@@ -36,6 +38,10 @@ def get_products_by_customer(request):
                 'id': product.id,
                 'urun_ismi1': product.urun_ismi1,
                 'urun_kod': product.urun_kod,
+                'urun_barkod': product.urun_barkod,
+                'urun_min': product.urun_min,
+                'urun_max': product.urun_max,
+                'urun_etiket': product.urun_etiket,
             }
             for product in products
         ]
@@ -247,6 +253,138 @@ def get_customer_info(request):
             return JsonResponse({'success': False, 'message': 'Müşteri bulunamadı.'}, status=404)
     return JsonResponse({'success': False, 'message': 'Geçersiz istek yöntemi.'}, status=400)
 
+def calculate_new_x(original_x, font_width, text_length):
+    """
+    Calculates the new X position to center the text based on its length using the provided formula.
+    Formula: (original_x / 2) + (font_width / 2 * (text_length / 2))
+    """
+    new_x = int((original_x / 2) + ((font_width / 2) * (text_length / 2)))
+    return new_x
+
+
+def split_text_into_lines(text, max_chars_per_line):
+    """
+    Splits the text into multiple lines based on the maximum number of characters per line,
+    ensuring no word is split across lines.
+    """
+    words = text.split()  # Metni kelimelere ayır
+    lines = []
+    current_line = ""
+
+    for word in words:
+        # Eğer kelime mevcut satıra sığmazsa, yeni bir satır başlat
+        if len(current_line) + len(word) + 1 > max_chars_per_line:
+            lines.append(current_line.strip())
+            current_line = word  # Yeni satırı başlat
+        else:
+            current_line += f" {word}"  # Kelimeyi mevcut satıra ekle
+
+    # Son satırı ekle
+    if current_line:
+        lines.append(current_line.strip())
+
+    return lines
+
+
+def calculate_new_x_centered(original_x, font_width, text_length):
+    """
+    Calculates the new X position to center the text based on its length using the provided formula.
+    Formula: (original_x / 2) + ((font_width / 2) * (text_length / 2))
+    """
+    return int((original_x / 2) + ((font_width + 1.88) * (text_length / 2)))
+
+
+@csrf_exempt
+def print_file(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            placeholders = {
+                "%net%": data.get('weight', '').strip(),
+                "%partino%": data.get('customText', '').strip(),
+                "%musteri_ismi1%": data.get('customerName', ''),
+                "%musteri_ismi2%": data.get('customerName2', ''),
+                "%urun_ismi1%": data.get('productName', ''),
+                "%urun_kodu%": data.get('productCode', ''),
+                "%sno%": data.get('serialNumber', ''),
+                "%musteri_adresi%": data.get('customerAddress', '').replace('\n', '\n'),
+                "%date%": datetime.now().strftime('%d-%m-%Y'),
+                "%tarih%": datetime.now().strftime('%d-%m-%Y'),
+                "%saat%": datetime.now().strftime('%H:%M')
+            }
+
+            input_tspl_path = os.path.join(settings.BASE_DIR, 'static', 'printer', str(data.get('etiketText')))
+            output_tspl_path = os.path.join(settings.BASE_DIR, 'static', 'printer', 'yaz_eyz.prn')
+            print(input_tspl_path)
+            if not os.path.exists(input_tspl_path):
+                return JsonResponse({'success': False, 'message': 'Template file not found.'}, status=404)
+
+            with open(input_tspl_path, 'r', encoding='ISO-8859-9') as file:
+                content = file.readlines()
+
+            updated_lines = []
+
+            for line in content:
+                original_line = line.strip()
+
+                if original_line.startswith("TEXT"):
+                    match = re.match(
+                        r'TEXT\s+(\d+),\s*(\d+),\s*"([^"]*)",\s*(\d+),\s*(\d+),\s*(\d+),\s*"([^"]*)"',
+                        original_line
+                    )
+                    if match:
+                        original_x, y, font, rotation, font_width, font_height, data = match.groups()
+                        original_x, y, font_width, font_height = map(int, [original_x, y, font_width, font_height])
+
+                        # Placeholder'ları değiştir
+                        for placeholder, value in placeholders.items():
+                            if placeholder in data:
+                                data = data.replace(placeholder, value)
+
+                        # `%ORTA%` kontrolü
+                        is_centered = "%ORTA%" in data
+                        data = data.replace("%ORTA%", "").strip()
+
+                        # Harf uzunluğu ve satır kontrolü
+                        total_length = len(data)
+                        max_chars_per_line = int(original_x / (font_width * 1.22))
+
+                        if total_length <= max_chars_per_line and is_centered:
+                            # `%ORTA%` varsa ve tek satıra sığıyorsa ortala
+                            text_length = total_length
+                            new_x = calculate_new_x_centered(original_x, font_width, text_length)
+                            updated_line = f'TEXT {new_x},{y},"{font}",{rotation},{font_width},{font_height},"{data}"'
+                            updated_lines.append(updated_line)
+                        else:
+                            # Çok satırlıysa veya `%ORTA%` yoksa, orijinal X değerini kullan
+                            lines = split_text_into_lines(data, max_chars_per_line)
+                            for i, line_text in enumerate(lines):
+                                new_x = original_x
+                                if i > 0:
+                                    y -= (font_height*2) + 6
+
+                                updated_line = f'TEXT {new_x},{y},"{font}",{rotation},{font_width},{font_height},"{line_text}"'
+                                updated_lines.append(updated_line)
+                        continue
+                updated_lines.append(original_line)
+
+            with open(output_tspl_path, 'w', encoding='ISO-8859-9') as output_file:
+                output_file.write("\n".join(updated_lines))
+
+            return JsonResponse({'success': True, 'message': 'Etiket başarıyla yazdırıldı.'})
+
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'message': 'Invalid JSON format.'}, status=400)
+        except Exception as e:
+            import traceback
+            error_message = traceback.format_exc()
+            print(error_message)
+            return JsonResponse({'success': False, 'message': f'Unexpected error: {str(e)}'}, status=500)
+
+    return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=400)
+
+
+"""
 @csrf_exempt
 def print_file(request):
     if request.method == 'POST':
@@ -350,7 +488,7 @@ def print_file(request):
 
     return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=400)
 
-
+"""
 
 """
 @csrf_exempt
@@ -399,7 +537,6 @@ def print_file(request):
             # Yazıcıya gönder
             subprocess.run(['lp', yaz_file_path], check=True)
             
-            """"""
             # Yazıcıya bağlan
             printer = usb.core.find(idVendor=VENDOR_ID, idProduct=PRODUCT_ID)
             if printer is None:
@@ -484,7 +621,7 @@ def print_label(request):
             with open(yaz_file_path, 'w') as yaz_file:
                 yaz_file.write(content)
 
-            subprocess.run(['lp', yaz_file_path], check=True)
+            #subprocess.run(['lp', yaz_file_path], check=True)
 
             return JsonResponse({'success': True, 'message': 'Etiket yazdırıldı.'})
         except Exception as e:

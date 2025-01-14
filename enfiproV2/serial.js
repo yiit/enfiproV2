@@ -12,7 +12,8 @@ let latestData = ''; // Gelen son veriyi saklamak için
 app.use(cors()); // Tüm kaynaklara izin ver
 
 // Seri port yapılandırması
-const serialPort = new SerialPort('/dev/ttyS1', { baudRate: 9600 });
+//const serialPort = new SerialPort('/dev/ttyS1', { baudRate: 9600 });
+const serialPort = new SerialPort('COM6', { baudRate: 9600 });
 //const serialPort = new SerialPort('/dev/ttyUSB0', { baudRate: 9600 });
 const parser = serialPort.pipe(new ReadlineParser({ delimiter: '\r\n' }));
 

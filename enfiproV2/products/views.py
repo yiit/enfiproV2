@@ -1,9 +1,11 @@
+import os
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from .models import Category, Product
 from products.models import Product
+from django_pos import settings
 
 @login_required(login_url="/accounts/login/")
 def categories_list_view(request):
@@ -113,132 +115,95 @@ def products_add_view(request):
           product = Product.objects.get(id=(last_product.id))
           fields = [
             #{"name": "urun_kod", "label": "Ürün Kodu", "type": "text", "value": str(int(product.urun_kod) + 1)}
-            {"name": "urun_kod", "label": "Ürün Kodu", "type": "text", "value": product.urun_kod},
-            {"name": "urun_ismi1", "label": "Ürün İsmi 1", "type": "text", "value": product.urun_ismi1},
-            {"name": "urun_ismi2", "label": "Ürün İsmi 2", "type": "text", "value": product.urun_ismi2},
-            {"name": "urun_grup", "label": "Ürün Grubu", "type": "text", "value": product.urun_grup},
-            {"name": "urun_tip", "label": "Ürün Tipi", "type": "text", "value": product.urun_tip},
-            {"name": "urun_fiyat", "label": "Ürün Fiyat ₺", "type": "number", "value": product.urun_fiyat},
-            {"name": "urun_musteri", "label": "Ürün Müşteri", "type": "text", "value": product.urun_musteri},
-            {"name": "urun_barkod", "label": "Ürün Barkod", "type": "number", "value": product.urun_barkod},
-            {"name": "urun_qrkod", "label": "Ürün QRkod", "type": "text", "value": product.urun_qrkod},
-            {"name": "urun_stt", "label": "Ürün STT", "type": "number", "value": product.urun_stt},
-            {"name": "urun_resim", "label": "Ürün Resim", "type": "text", "value": product.urun_resim},
-            {"name": "urun_min", "label": "Ürün Min", "type": "number", "value": product.urun_min},
-            {"name": "urun_max", "label": "Ürün Max", "type": "number", "value": product.urun_max},
-            {"name": "urun_hedef", "label": "Ürün Hedef", "type": "number", "value": product.urun_hedef},
-            {"name": "urun_adet_gramaj", "label": "Ürün Adet Gramaj", "type": "number", "value": product.urun_adet_gramaj},
-            {"name": "urun_dara", "label": "Ürün Dara", "type": "number", "value": product.urun_dara},
-            {"name": "urun_adet", "label": "Ürün Adet", "type": "number", "value": product.urun_adet},
-            {"name": "urun_etiket", "label": "Ürün Etiket", "type": "text", "value": product.urun_etiket},
-            {"name": "urun_top_etiket", "label": "Ürün Toplam Etiketi", "type": "text", "value": product.urun_top_etiket},
-            {"name": "urun_izleme", "label": "Ürün İzleme", "type": "text", "value": product.urun_izleme},
-            {"name": "urun_kodtip", "label": "Ürün Kod Tipi", "type": "text", "value": product.urun_kodtip},
-            {"name": "urun_tablo", "label": "Ürün Tablo", "type": "text", "value": product.urun_tablo},
-            {"name": "urun_mesaj1", "label": "Ürün Mesaj1", "type": "text", "value": product.urun_mesaj1},
-            {"name": "urun_mesaj2", "label": "Ürün Mesaj2", "type": "text", "value": product.urun_mesaj2},
-            {"name": "urun_mesaj3", "label": "Ürün Mesaj3", "type": "text", "value": product.urun_mesaj3},
-            {"name": "urun_mesaj4", "label": "Ürün Mesaj4", "type": "text", "value": product.urun_mesaj4},
-            {"name": "urun_mesaj5", "label": "Ürün Mesaj5", "type": "text", "value": product.urun_mesaj5},
-            {"name": "urun_mesaj6", "label": "Ürün Mesaj6", "type": "text", "value": product.urun_mesaj6},
-            {"name": "urun_mesaj7", "label": "Ürün Mesaj7", "type": "text", "value": product.urun_mesaj7},
-            {"name": "urun_mesaj8", "label": "Ürün Mesaj8", "type": "text", "value": product.urun_mesaj8},
-            {"name": "urun_mesaj9", "label": "Ürün Mesaj9", "type": "text", "value": product.urun_mesaj9},
-            {"name": "urun_tanim", "label": "Ürün Tanımı", "type": "text", "value": product.urun_tanim},
-            {"name": "urun_icerik", "label": "Ürün İçeriği", "type": "text", "value": product.urun_icerik},
-            {"name": "urun_aciklama", "label": "Ürün Açıklaması", "type": "text", "value": product.urun_aciklama},
-            {"name": "urun_mensei", "label": "Ürün Menşei", "type": "text", "value": product.urun_mensei}
+            {"name": "urun_kod", "label": "Ürün Kodu", "type": "text", "value": product.urun_kod, "is_textarea": False},
+            {"name": "urun_ismi1", "label": "Ürün İsmi 1", "type": "text", "value": product.urun_ismi1,"is_textarea": False},
+            {"name": "urun_ismi2", "label": "Ürün İsmi 2", "type": "text", "value": product.urun_ismi2,"is_textarea": False},
+            {"name": "urun_grup", "label": "Ürün Grubu", "type": "text", "value": product.urun_grup,"is_textarea": False},
+            {"name": "urun_tip", "label": "Ürün Tipi", "type": "text", "value": product.urun_tip,"is_textarea": False},
+            {"name": "urun_fiyat", "label": "Ürün Fiyat ₺", "type": "number", "value": product.urun_fiyat,"is_textarea": False},
+            {"name": "urun_musteri", "label": "Ürün Müşteri", "type": "text", "value": product.urun_musteri,"is_textarea": False},
+            {"name": "urun_barkod", "label": "Ürün Barkod", "type": "number", "value": product.urun_barkod,"is_textarea": False},
+            {"name": "urun_qrkod", "label": "Ürün QRkod", "type": "text", "value": product.urun_qrkod,"is_textarea": False},
+            {"name": "urun_stt", "label": "Ürün STT", "type": "number", "value": product.urun_stt,"is_textarea": False},
+            {"name": "urun_resim", "label": "Ürün Resim", "type": "text", "value": product.urun_resim,"is_textarea": False},
+            {"name": "urun_min", "label": "Ürün Min", "type": "number", "value": product.urun_min,"is_textarea": False},
+            {"name": "urun_max", "label": "Ürün Max", "type": "number", "value": product.urun_max,"is_textarea": False},
+            {"name": "urun_hedef", "label": "Ürün Hedef", "type": "number", "value": product.urun_hedef,"is_textarea": False},
+            {"name": "urun_adet_gramaj", "label": "Ürün Adet Gramaj", "type": "number", "value": product.urun_adet_gramaj,"is_textarea": False},
+            {"name": "urun_dara", "label": "Ürün Dara", "type": "number", "value": product.urun_dara,"is_textarea": False},
+            {"name": "urun_adet", "label": "Ürün Adet", "type": "number", "value": product.urun_adet,"is_textarea": False},
+            {"name": "urun_etiket", "label": "Ürün Etiket", "type": "text", "value": product.urun_etiket,"is_textarea": False},
+            {"name": "urun_top_etiket", "label": "Ürün Toplam Etiketi", "type": "text", "value": product.urun_top_etiket,"is_textarea": False},
+            {"name": "urun_izleme", "label": "Ürün İzleme", "type": "text", "value": product.urun_izleme,"is_textarea": False},
+            {"name": "urun_kodtip", "label": "Ürün Kod Tipi", "type": "text", "value": product.urun_kodtip,"is_textarea": False},
+            {"name": "urun_tablo", "label": "Ürün Tablo", "type": "text", "value": product.urun_tablo,"is_textarea": False},
+            {"name": "urun_mesaj1", "label": "Ürün Mesaj1", "type": "text", "value": product.urun_mesaj1,"is_textarea": True},
+            {"name": "urun_mesaj2", "label": "Ürün Mesaj2", "type": "text", "value": product.urun_mesaj2,"is_textarea": True},
+            {"name": "urun_mesaj3", "label": "Ürün Mesaj3", "type": "text", "value": product.urun_mesaj3,"is_textarea": True},
+            {"name": "urun_mesaj4", "label": "Ürün Mesaj4", "type": "text", "value": product.urun_mesaj4,"is_textarea": True},
+            {"name": "urun_mesaj5", "label": "Ürün Mesaj5", "type": "text", "value": product.urun_mesaj5,"is_textarea": True},
+            {"name": "urun_mesaj6", "label": "Ürün Mesaj6", "type": "text", "value": product.urun_mesaj6,"is_textarea": True},
+            {"name": "urun_mesaj7", "label": "Ürün Mesaj7", "type": "text", "value": product.urun_mesaj7,"is_textarea": True},
+            {"name": "urun_mesaj8", "label": "Ürün Mesaj8", "type": "text", "value": product.urun_mesaj8,"is_textarea": True},
+            {"name": "urun_mesaj9", "label": "Ürün Mesaj9", "type": "text", "value": product.urun_mesaj9,"is_textarea": True},
+            {"name": "urun_tanim", "label": "Ürün Tanımı", "type": "text", "value": product.urun_tanim,"is_textarea": True},
+            {"name": "urun_icerik", "label": "Ürün İçeriği", "type": "text", "value": product.urun_icerik,"is_textarea": True},
+            {"name": "urun_aciklama", "label": "Ürün Açıklaması", "type": "text", "value": product.urun_aciklama,"is_textarea": True},
+            {"name": "urun_mensei", "label": "Ürün Menşei", "type": "text", "value": product.urun_mensei,"is_textarea": False}
           ]
         else:
             product = None
             fields = [
-                {"name": "urun_kod", "label": "Ürün Kodu", "type": "text", "value": ""},
-                {"name": "urun_ismi1", "label": "Ürün İsmi 1", "type": "text", "value": ""},
-                {"name": "urun_ismi2", "label": "Ürün İsmi 2", "type": "text", "value": ""},
-                {"name": "urun_grup", "label": "Ürün Grubu", "type": "text", "value": ""},
-                {"name": "urun_tip", "label": "Ürün Tipi", "type": "text", "value": ""},
+                {"name": "urun_kod", "label": "Ürün Kodu", "type": "text", "value": "","is_textarea": False},
+                {"name": "urun_ismi1", "label": "Ürün İsmi 1", "type": "text", "value": "","is_textarea": False},
+                {"name": "urun_ismi2", "label": "Ürün İsmi 2", "type": "text", "value": "","is_textarea": False},
+                {"name": "urun_grup", "label": "Ürün Grubu", "type": "text", "value": "","is_textarea": False},
+                {"name": "urun_tip", "label": "Ürün Tipi", "type": "text", "value": "","is_textarea": False},
         
-                {"name": "urun_fiyat", "label": "Ürün Fiyat ₺", "type": "number", "value": 0},
-                {"name": "urun_musteri", "label": "Ürün Müşteri", "type": "text", "value": 0},
-                {"name": "urun_barkod", "label": "Ürün Barkod", "type": "number", "value": 0},
-                {"name": "urun_qrkod", "label": "Ürün QRkod", "type": "text", "value": ""},
-                {"name": "urun_stt", "label": "Ürün STT", "type": "number", "value": 0},
-                {"name": "urun_resim", "label": "Ürün Resim", "type": "text", "value": ""},
-                {"name": "urun_min", "label": "Ürün Min", "type": "number", "value": 0},
-                {"name": "urun_max", "label": "Ürün Max", "type": "number", "value": 0},
-                {"name": "urun_hedef", "label": "Ürün Hedef", "type": "number", "value": 0},
-                {"name": "urun_adet_gramaj", "label": "Ürün Adet Gramaj", "type": "number", "value": 0},
-                {"name": "urun_dara", "label": "Ürün Dara", "type": "number", "value": 0},
-                {"name": "urun_adet", "label": "Ürün Adet", "type": "number", "value": 0},
-                {"name": "urun_etiket", "label": "Ürün Etiket", "type": "text", "value": ""},
-                {"name": "urun_top_etiket", "label": "Ürün Toplam Etiketi", "type": "text", "value": ""},
-                {"name": "urun_izleme", "label": "Ürün İzleme", "type": "text", "value": ""},
-                {"name": "urun_kodtip", "label": "Ürün Kod Tipi", "type": "text", "value": ""},
-                {"name": "urun_tablo", "label": "Ürün Tablo", "type": "text", "value": ""},
-                {"name": "urun_mesaj1", "label": "Ürün Mesaj1", "type": "text", "value": ""},
-                {"name": "urun_mesaj2", "label": "Ürün Mesaj2", "type": "text", "value": ""},
-                {"name": "urun_mesaj3", "label": "Ürün Mesaj3", "type": "text", "value": ""},
-                {"name": "urun_mesaj4", "label": "Ürün Mesaj4", "type": "text", "value": ""},
-                {"name": "urun_mesaj5", "label": "Ürün Mesaj5", "type": "text", "value": ""},
-                {"name": "urun_mesaj6", "label": "Ürün Mesaj6", "type": "text", "value": ""},
-                {"name": "urun_mesaj7", "label": "Ürün Mesaj7", "type": "text", "value": ""},
-                {"name": "urun_mesaj8", "label": "Ürün Mesaj8", "type": "text", "value":""},
-                {"name": "urun_mesaj9", "label": "Ürün Mesaj9", "type": "text", "value": ""},
-                {"name": "urun_tanim", "label": "Ürün Tanımı", "type": "text", "value": ""},
-                {"name": "urun_icerik", "label": "Ürün İçeriği", "type": "text", "value": ""},
-                {"name": "urun_aciklama", "label": "Ürün Açıklaması", "type": "text", "value": ""},
-                {"name": "urun_mensei", "label": "Ürün Menşei", "type": "text", "value": ""}
+                {"name": "urun_fiyat", "label": "Ürün Fiyat ₺", "type": "number", "value": 0,"is_textarea": False},
+                {"name": "urun_musteri", "label": "Ürün Müşteri", "type": "text", "value": 0,"is_textarea": False},
+                {"name": "urun_barkod", "label": "Ürün Barkod", "type": "number", "value": 0,"is_textarea": False},
+                {"name": "urun_qrkod", "label": "Ürün QRkod", "type": "text", "value": "","is_textarea": False},
+                {"name": "urun_stt", "label": "Ürün STT", "type": "number", "value": 0,"is_textarea": False},
+                {"name": "urun_resim", "label": "Ürün Resim", "type": "text", "value": "","is_textarea": False},
+                {"name": "urun_min", "label": "Ürün Min", "type": "number", "value": 0,"is_textarea": False},
+                {"name": "urun_max", "label": "Ürün Max", "type": "number", "value": 0,"is_textarea": False},
+                {"name": "urun_hedef", "label": "Ürün Hedef", "type": "number", "value": 0,"is_textarea": False},
+                {"name": "urun_adet_gramaj", "label": "Ürün Adet Gramaj", "type": "number", "value": 0,"is_textarea": False},
+                {"name": "urun_dara", "label": "Ürün Dara", "type": "number", "value": 0,"is_textarea": False},
+                {"name": "urun_adet", "label": "Ürün Adet", "type": "number", "value": 0,"is_textarea": False},
+                {"name": "urun_etiket", "label": "Ürün Etiket", "type": "text", "value": "","is_textarea": False},
+                {"name": "urun_top_etiket", "label": "Ürün Toplam Etiketi", "type": "text", "value": "","is_textarea": False},
+                {"name": "urun_izleme", "label": "Ürün İzleme", "type": "text", "value": "","is_textarea": False},
+                {"name": "urun_kodtip", "label": "Ürün Kod Tipi", "type": "text", "value": "","is_textarea": False},
+                {"name": "urun_tablo", "label": "Ürün Tablo", "type": "text", "value": "","is_textarea": False},
+                {"name": "urun_mesaj1", "label": "Ürün Mesaj1", "type": "text", "value": "","is_textarea": True},
+                {"name": "urun_mesaj2", "label": "Ürün Mesaj2", "type": "text", "value": "","is_textarea": True},
+                {"name": "urun_mesaj3", "label": "Ürün Mesaj3", "type": "text", "value": "","is_textarea": True},
+                {"name": "urun_mesaj4", "label": "Ürün Mesaj4", "type": "text", "value": "","is_textarea": True},
+                {"name": "urun_mesaj5", "label": "Ürün Mesaj5", "type": "text", "value": "","is_textarea": True},
+                {"name": "urun_mesaj6", "label": "Ürün Mesaj6", "type": "text", "value": "","is_textarea": True},
+                {"name": "urun_mesaj7", "label": "Ürün Mesaj7", "type": "text", "value": "","is_textarea": True},
+                {"name": "urun_mesaj8", "label": "Ürün Mesaj8", "type": "text", "value":"","is_textarea": True},
+                {"name": "urun_mesaj9", "label": "Ürün Mesaj9", "type": "text", "value": "","is_textarea": True},
+                {"name": "urun_tanim", "label": "Ürün Tanımı", "type": "text", "value": "","is_textarea": True},
+                {"name": "urun_icerik", "label": "Ürün İçeriği", "type": "text", "value": "","is_textarea": True},
+                {"name": "urun_aciklama", "label": "Ürün Açıklaması", "type": "text", "value": "","is_textarea": True},
+                {"name": "urun_mensei", "label": "Ürün Menşei", "type": "text", "value": "","is_textarea": False}
             ]
     except Product.DoesNotExist:
         messages.error(request, 'Ürün Bulunamadı!', extra_tags="danger")
         return redirect('products:products_list')
 
-
-
     context = {
         "active_icon": "products_categories",
         "product": product,
         "fields": fields,
+        "urun_etiket_value": product.urun_etiket,  # Bu, mevcut etiket değerini şablona gönderecek
         "product_status": Product.status.field.choices,
         "categories": Category.objects.filter(status="ACTIVE")
     }
-        #"general_fields": [
-        #    {"name": "urun_kod", "label": "Ürün Kodu", "type": "text", "value": ""},
-        #    {"name": "urun_ismi1", "label": "Ürün İsmi 1", "type": "text", "value": ""},
-        #    {"name": "urun_ismi2", "label": "Ürün İsmi 2", "type": "text", "value": ""},
-        #    {"name": "urun_grup", "label": "Ürün Grubu", "type": "text", "value": ""},
-        #    {"name": "urun_tip", "label": "Ürün Tipi", "type": "text", "value": ""},
-        #    {"name": "urun_fiyat", "label": "Ürün Fiyat ₺", "type": "number", "value": 0},
-        #    {"name": "urun_musteri", "label": "Ürün Müşteri", "type": "text", "value": ""},
-        #    {"name": "urun_barkod", "label": "Ürün Barkod", "type": "number", "value": 0},
-        #    {"name": "urun_qrkod", "label": "Ürün QRkod", "type": "text", "value": ""},
-        #   {"name": "urun_stt", "label": "Ürün STT", "type": "number", "value": 0},
-        #    {"name": "urun_resim", "label": "Ürün Resim", "type": "text", "value": ""},
-        #    {"name": "urun_min", "label": "Ürün Min", "type": "number", "value": 0},
-        #    {"name": "urun_max", "label": "Ürün Max", "type": "number", "value": 0},
-        #    {"name": "urun_hedef", "label": "Ürün Hedef", "type": "number", "value": 0},
-        #    {"name": "urun_adet_gramaj", "label": "Ürün Adet Gramaj", "type": "number", "value": 0},
-        #    {"name": "urun_dara", "label": "Ürün Dara", "type": "number", "value": 0},
-        #    {"name": "urun_adet", "label": "Ürün Adet", "type": "number", "value": 0},
-        #    {"name": "urun_etiket", "label": "Ürün Etiket", "type": "text", "value": ""},
-        #    {"name": "urun_top_etiket", "label": "Ürün Toplam Etiketi", "type": "text", "value": ""},
-        #    {"name": "urun_izleme", "label": "Ürün İzleme", "type": "text", "value": ""},
-        #    {"name": "urun_kodtip", "label": "Ürün Kod Tipi", "type": "text", "value": ""},
-        #    {"name": "urun_tablo", "label": "Ürün Tablo", "type": "text", "value": ""},
-        #    {"name": "urun_mesaj1", "label": "Ürün Mesaj1", "type": "text", "value": ""},
-        #    {"name": "urun_mesaj2", "label": "Ürün Mesaj2", "type": "text", "value": ""},
-        #    {"name": "urun_mesaj3", "label": "Ürün Mesaj3", "type": "text", "value": ""},
-        #    {"name": "urun_mesaj4", "label": "Ürün Mesaj4", "type": "text", "value": ""},
-        #    {"name": "urun_mesaj5", "label": "Ürün Mesaj5", "type": "text", "value": ""},
-        #    {"name": "urun_mesaj6", "label": "Ürün Mesaj6", "type": "text", "value": ""},
-        #    {"name": "urun_mesaj7", "label": "Ürün Mesaj7", "type": "text", "value": ""},
-        #    {"name": "urun_mesaj8", "label": "Ürün Mesaj8", "type": "text", "value": ""},
-        #    {"name": "urun_mesaj9", "label": "Ürün Mesaj9", "type": "text", "value": ""},
-        #    {"name": "urun_tanim", "label": "Ürün Tanımı", "type": "text", "value": ""},
-        #    {"name": "urun_icerik", "label": "Ürün İçeriği", "type": "text", "value": ""},
-        #    {"name": "urun_aciklama", "label": "Ürün Açıklaması", "type": "text", "value": ""},
-        #    {"name": "urun_mensei", "label": "Ürün Menşei", "type": "text", "value": ""}
-
+    
     if request.method == 'POST':
         data = request.POST
         try:
@@ -250,15 +215,15 @@ def products_add_view(request):
         attributes = {
             "status": data.get('state', "TANIMSIZ"),
             "category": category,
-            **{key: data.get(key, "TANIMSIZ") for key in [
-                "urun_kod", "urun_ismi1", "urun_ismi2", "urun_grup", "urun_tip", "urun_fiyat", "urun_musteri",
+            **{key: data.get(key, "") for key in [
+                "urun_kod", "urun_ismi1", "urun_ismi2", "urun_grup", "urun_tip", "urun_musteri",
                 "urun_barkod", "urun_qrkod", "urun_resim", "urun_etiket", "urun_top_etiket",
                 "urun_izleme", "urun_kodtip", "urun_tablo", 
                 "urun_mesaj1", "urun_mesaj2", "urun_mesaj3", "urun_mesaj4", "urun_mesaj5", "urun_mesaj6", "urun_mesaj7", "urun_mesaj8", "urun_mesaj9",
                 "urun_tanim",  "urun_icerik", "urun_aciklama", "urun_mensei"
             ]},
             **{key: data.get(key, 0) for key in [
-                "urun_stt", "urun_min", "urun_max", "urun_hedef", "urun_adet_gramaj", "urun_dara", "urun_adet"
+                "urun_fiyat", "urun_stt", "urun_min", "urun_max", "urun_hedef", "urun_adet_gramaj", "urun_dara", "urun_adet"
             ]},
             "name": data.get('name', "TANIMSIZ"),
             "description": data.get('description', "TANIMSIZ"),
@@ -289,47 +254,52 @@ def products_update_view(request, product_id):
         return redirect('products:products_list')
 
     fields = [
-        {"name": "urun_kod", "label": "Ürün Kodu", "type": "text", "value": product.urun_kod},
-        {"name": "urun_ismi1", "label": "Ürün İsmi 1", "type": "text", "value": product.urun_ismi1},
-        {"name": "urun_ismi2", "label": "Ürün İsmi 2", "type": "text", "value": product.urun_ismi2},
-        {"name": "urun_grup", "label": "Ürün Grubu", "type": "text", "value": product.urun_grup},
-        {"name": "urun_tip", "label": "Ürün Tipi", "type": "text", "value": product.urun_tip},
-        {"name": "urun_fiyat", "label": "Ürün Fiyat ₺", "type": "number", "value": product.urun_fiyat},
-        {"name": "urun_musteri", "label": "Ürün Müşteri", "type": "text", "value": product.urun_musteri},
-        {"name": "urun_barkod", "label": "Ürün Barkod", "type": "number", "value": product.urun_barkod},
-        {"name": "urun_qrkod", "label": "Ürün QRkod", "type": "text", "value": product.urun_qrkod},
-        {"name": "urun_stt", "label": "Ürün STT", "type": "number", "value": product.urun_stt},
-        {"name": "urun_resim", "label": "Ürün Resim", "type": "text", "value": product.urun_resim},
-        {"name": "urun_min", "label": "Ürün Min", "type": "number", "value": product.urun_min},
-        {"name": "urun_max", "label": "Ürün Max", "type": "number", "value": product.urun_max},
-        {"name": "urun_hedef", "label": "Ürün Hedef", "type": "number", "value": product.urun_hedef},
-        {"name": "urun_adet_gramaj", "label": "Ürün Adet Gramaj", "type": "number", "value": product.urun_adet_gramaj},
-        {"name": "urun_dara", "label": "Ürün Dara", "type": "number", "value": product.urun_dara},
-        {"name": "urun_adet", "label": "Ürün Adet", "type": "number", "value": product.urun_adet},
-        {"name": "urun_etiket", "label": "Ürün Etiket", "type": "text", "value": product.urun_etiket},
-        {"name": "urun_top_etiket", "label": "Ürün Toplam Etiketi", "type": "text", "value": product.urun_top_etiket},
-        {"name": "urun_izleme", "label": "Ürün İzleme", "type": "text", "value": product.urun_izleme},
-        {"name": "urun_kodtip", "label": "Ürün Kod Tipi", "type": "text", "value": product.urun_kodtip},
-        {"name": "urun_tablo", "label": "Ürün Tablo", "type": "text", "value": product.urun_tablo},
-        {"name": "urun_mesaj1", "label": "Ürün Mesaj1", "type": "text", "value": product.urun_mesaj1},
-        {"name": "urun_mesaj2", "label": "Ürün Mesaj2", "type": "text", "value": product.urun_mesaj2},
-        {"name": "urun_mesaj3", "label": "Ürün Mesaj3", "type": "text", "value": product.urun_mesaj3},
-        {"name": "urun_mesaj4", "label": "Ürün Mesaj4", "type": "text", "value": product.urun_mesaj4},
-        {"name": "urun_mesaj5", "label": "Ürün Mesaj5", "type": "text", "value": product.urun_mesaj5},
-        {"name": "urun_mesaj6", "label": "Ürün Mesaj6", "type": "text", "value": product.urun_mesaj6},
-        {"name": "urun_mesaj7", "label": "Ürün Mesaj7", "type": "text", "value": product.urun_mesaj7},
-        {"name": "urun_mesaj8", "label": "Ürün Mesaj8", "type": "text", "value": product.urun_mesaj8},
-        {"name": "urun_mesaj9", "label": "Ürün Mesaj9", "type": "text", "value": product.urun_mesaj9},
-        {"name": "urun_tanim", "label": "Ürün Tanımı", "type": "text", "value": product.urun_tanim},
-        {"name": "urun_icerik", "label": "Ürün İçeriği", "type": "text", "value": product.urun_icerik},
-        {"name": "urun_aciklama", "label": "Ürün Açıklaması", "type": "text", "value": product.urun_aciklama},
-        {"name": "urun_mensei", "label": "Ürün Menşei", "type": "text", "value": product.urun_mensei}
+        {"name": "urun_kod", "label": "Ürün Kodu", "type": "text", "value": product.urun_kod, "is_textarea": False},
+        {"name": "urun_ismi1", "label": "Ürün İsmi 1", "type": "text", "value": product.urun_ismi1,"is_textarea": False},
+        {"name": "urun_ismi2", "label": "Ürün İsmi 2", "type": "text", "value": product.urun_ismi2,"is_textarea": False},
+        {"name": "urun_grup", "label": "Ürün Grubu", "type": "text", "value": product.urun_grup,"is_textarea": False},
+        {"name": "urun_tip", "label": "Ürün Tipi", "type": "text", "value": product.urun_tip,"is_textarea": False},
+        {"name": "urun_fiyat", "label": "Ürün Fiyat ₺", "type": "number", "value": product.urun_fiyat,"is_textarea": False},
+        {"name": "urun_musteri", "label": "Ürün Müşteri", "type": "text", "value": product.urun_musteri,"is_textarea": False},
+        {"name": "urun_barkod", "label": "Ürün Barkod", "type": "number", "value": product.urun_barkod,"is_textarea": False},
+        {"name": "urun_qrkod", "label": "Ürün QRkod", "type": "text", "value": product.urun_qrkod,"is_textarea": False},
+        {"name": "urun_stt", "label": "Ürün STT", "type": "number", "value": product.urun_stt,"is_textarea": False},
+        {"name": "urun_resim", "label": "Ürün Resim", "type": "text", "value": product.urun_resim,"is_textarea": False},
+        {"name": "urun_min", "label": "Ürün Min", "type": "number", "value": product.urun_min,"is_textarea": False},
+        {"name": "urun_max", "label": "Ürün Max", "type": "number", "value": product.urun_max,"is_textarea": False},
+        {"name": "urun_hedef", "label": "Ürün Hedef", "type": "number", "value": product.urun_hedef,"is_textarea": False},
+        {"name": "urun_adet_gramaj", "label": "Ürün Adet Gramaj", "type": "number", "value": product.urun_adet_gramaj,"is_textarea": False},
+        {"name": "urun_dara", "label": "Ürün Dara", "type": "number", "value": product.urun_dara,"is_textarea": False},
+        {"name": "urun_adet", "label": "Ürün Adet", "type": "number", "value": product.urun_adet,"is_textarea": False},
+        {"name": "urun_etiket", "label": "Ürün Etiket", "type": "text", "value": product.urun_etiket,"is_textarea": False},
+        {"name": "urun_top_etiket", "label": "Ürün Toplam Etiketi", "type": "text", "value": product.urun_top_etiket,"is_textarea": False},
+        {"name": "urun_izleme", "label": "Ürün İzleme", "type": "text", "value": product.urun_izleme,"is_textarea": False},
+        {"name": "urun_kodtip", "label": "Ürün Kod Tipi", "type": "text", "value": product.urun_kodtip,"is_textarea": False},
+        {"name": "urun_tablo", "label": "Ürün Tablo", "type": "text", "value": product.urun_tablo,"is_textarea": False},
+        {"name": "urun_mesaj1", "label": "Ürün Mesaj1", "type": "text", "value": product.urun_mesaj1,"is_textarea": True},
+        {"name": "urun_mesaj2", "label": "Ürün Mesaj2", "type": "text", "value": product.urun_mesaj2,"is_textarea": True},
+        {"name": "urun_mesaj3", "label": "Ürün Mesaj3", "type": "text", "value": product.urun_mesaj3,"is_textarea": True},
+        {"name": "urun_mesaj4", "label": "Ürün Mesaj4", "type": "text", "value": product.urun_mesaj4,"is_textarea": True},
+        {"name": "urun_mesaj5", "label": "Ürün Mesaj5", "type": "text", "value": product.urun_mesaj5,"is_textarea": True},
+        {"name": "urun_mesaj6", "label": "Ürün Mesaj6", "type": "text", "value": product.urun_mesaj6,"is_textarea": True},
+        {"name": "urun_mesaj7", "label": "Ürün Mesaj7", "type": "text", "value": product.urun_mesaj7,"is_textarea": True},
+        {"name": "urun_mesaj8", "label": "Ürün Mesaj8", "type": "text", "value": product.urun_mesaj8,"is_textarea": True},
+        {"name": "urun_mesaj9", "label": "Ürün Mesaj9", "type": "text", "value": product.urun_mesaj9,"is_textarea": True},
+        {"name": "urun_tanim", "label": "Ürün Tanımı", "type": "text", "value": product.urun_tanim,"is_textarea": True},
+        {"name": "urun_icerik", "label": "Ürün İçeriği", "type": "text", "value": product.urun_icerik,"is_textarea": True},
+        {"name": "urun_aciklama", "label": "Ürün Açıklaması", "type": "text", "value": product.urun_aciklama,"is_textarea": True},
+        {"name": "urun_mensei", "label": "Ürün Menşei", "type": "text", "value": product.urun_mensei,"is_textarea": False}
     ]
+
+    prn_folder = os.path.join(settings.BASE_DIR, 'static', 'printer')
+    prn_files = [file for file in os.listdir(prn_folder) if file.endswith(".prn")]
 
     context = {
         "active_icon": "products",
         "product": product,
         "fields": fields,
+        "urun_etiket_value": product.urun_etiket,  # Mevcut değer
+        "prn_files": prn_files,  # PRN dosyaları
         "product_status": Product.status.field.choices,
         "categories": Category.objects.filter(status="ACTIVE"),
     }
@@ -345,15 +315,15 @@ def products_update_view(request, product_id):
         attributes = {
             "status": data.get('state', "TANIMSIZ"),
             "category": category,
-            **{key: data.get(key, "TANIMSIZ") for key in [
-                "urun_kod", "urun_ismi1", "urun_ismi2", "urun_grup", "urun_tip", "urun_fiyat", "urun_musteri",
+            **{key: data.get(key, "") for key in [
+                "urun_kod", "urun_ismi1", "urun_ismi2", "urun_grup", "urun_tip", "urun_musteri",
                 "urun_barkod", "urun_qrkod", "urun_resim", "urun_etiket", "urun_top_etiket",
                 "urun_izleme", "urun_kodtip", "urun_tablo", 
                 "urun_mesaj1", "urun_mesaj2", "urun_mesaj3", "urun_mesaj4", "urun_mesaj5", "urun_mesaj6", "urun_mesaj7", "urun_mesaj8", "urun_mesaj9",
                 "urun_tanim",  "urun_icerik", "urun_aciklama", "urun_mensei"
             ]},
             **{key: data.get(key, 0) for key in [
-                "urun_stt", "urun_min", "urun_max", "urun_hedef", "urun_adet_gramaj", "urun_dara", "urun_adet"
+                "urun_fiyat", "urun_stt", "urun_min", "urun_max", "urun_hedef", "urun_adet_gramaj", "urun_dara", "urun_adet"
             ]},
             "name": data.get('name', "TANIMSIZ"),
             "description": data.get('description', "TANIMSIZ"),
@@ -418,11 +388,25 @@ def get_products(request):
             "id": product.id,
             "urun_ismi1": product.urun_ismi1,
             "urun_kod": product.urun_kod,
-            "category": product.category.name,
-            "urun_barkod": product.urun_barkod,            
-            "urun_barkod": product.urun_barkod if product.urun_barkod else "Barkod Yok"
+            #"category": product.category.name,
+            "urun_barkod": product.urun_barkod,
+            "urun_min": product.urun_min,   
+            "urun_max": product.urun_max,
+            "urun_etiket": product.urun_etiket,                 
+            #"urun_barkod": product.urun_barkod if product.urun_barkod else "Barkod Yok"
         }
         for product in products
     ]
     return JsonResponse(results, safe=False)
 
+@login_required(login_url="/accounts/login/")
+def get_prn_files(request):
+    # PRN dosyalarının bulunduğu klasör
+    prn_folder = os.path.join(settings.BASE_DIR, 'static', 'printer')
+
+    # Klasördeki .prn dosyalarını listele
+    try:
+        prn_files = [f for f in os.listdir(prn_folder) if f.endswith('.prn')]
+        return JsonResponse({'success': True, 'files': prn_files})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
