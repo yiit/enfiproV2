@@ -10,7 +10,7 @@ echo "📦 Gerekli Linux paketleri kuruluyor..."
 sudo apt update
 sudo apt install -y wget git build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev \
     libsqlite3-dev curl libncurses5-dev libncursesw5-dev xz-utils tk-dev libffi-dev liblzma-dev \
-    flex bison gnupg2 lsb-release
+    flex bison gnupg2 lsb-release gpg samba samba-common-bin
 
 ### 2. ENFIPROV2 KLASÖRÜ VE GITHUB KLON ###
 echo "📁 ~/enfiproV2 klasörü hazırlanıyor ve GitHub'dan proje indiriliyor..."
@@ -67,13 +67,31 @@ echo "📂 PostgreSQL data dizini hazırlanıyor..."
 mkdir -p ~/enfiproV2/pgsql14_data
 ~/enfiproV2/pgsql14/bin/initdb -D ~/enfiproV2/pgsql14_data
 
-### 9. PYTHON GEREKLİ PIP KÜTÜPHANELERİ ###
+### 9. POSTGRESQL SERVER BAŞLAT ###
+echo "🚀 PostgreSQL server başlatılıyor..."
+~/enfiproV2/pgsql14/bin/pg_ctl -D ~/enfiproV2/pgsql14_data -l ~/enfiproV2/pgsql14_data/logfile start
+sleep 5
+
+### 10. POSTGRESQL DATABASE VE USER OLUŞTUR ###
+echo "🛠 Django için PostgreSQL kullanıcı ve veritabanı oluşturuluyor..."
+~/enfiproV2/pgsql14/bin/psql -h localhost -d postgres -c "CREATE ROLE django_user WITH LOGIN PASSWORD '1';"
+~/enfiproV2/pgsql14/bin/psql -h localhost -d postgres -c "CREATE DATABASE django_db OWNER django_user;"
+~/enfiproV2/pgsql14/bin/psql -h localhost -d postgres -c "GRANT ALL PRIVILEGES ON DATABASE django_db TO django_user;"
+
+### 11. PYTHON GEREKLİ PIP KÜTÜPHANELERİ ###
 echo "📦 Django ve gerekli pip kütüphaneleri yükleniyor..."
 pip install Django psycopg2-binary
 
-### 10. SYSTEMD SERVİSLERİ OLUŞTURULUYOR ###
+### 12. DJANGO MIGRATIONS VE SUPERUSER ###
+echo "🛠 Django makemigrations ve migrate çalıştırılıyor..."
+python manage.py makemigrations
+python manage.py migrate
 
-echo "🛠 PostgreSQL systemd servisi yazılıyor..."
+echo "🛠 Django superuser (pi / 1) oluşturuluyor..."
+echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_superuser('pi', 'pi@example.com', '1')" | python manage.py shell
+
+### 13. SYSTEMD SERVİSLERİ OLUŞTURULUYOR ###
+echo "🛠 PostgreSQL, Django ve SerialJS systemd servisleri yazılıyor..."
 sudo tee /etc/systemd/system/postgresql-enfipro.service > /dev/null <<EOL
 [Unit]
 Description=PostgreSQL 14 (enfiproV2) manual instance
@@ -91,7 +109,6 @@ RestartSec=5
 WantedBy=multi-user.target
 EOL
 
-echo "🛠 Django systemd servisi yazılıyor..."
 sudo tee /etc/systemd/system/django-enfipro.service > /dev/null <<EOL
 [Unit]
 Description=Django Server for EnfiproV2
@@ -109,7 +126,6 @@ RestartSec=5
 WantedBy=multi-user.target
 EOL
 
-echo "🛠 Serial.js Node.js systemd servisi yazılıyor..."
 sudo tee /etc/systemd/system/serialjs-enfipro.service > /dev/null <<EOL
 [Unit]
 Description=Node.js Serial.js Service for EnfiproV2
@@ -126,44 +142,72 @@ RestartSec=5
 WantedBy=multi-user.target
 EOL
 
-### 11. SERVİSLERİ ETKİNLEŞTİR VE BAŞLAT ###
-echo "🔄 Systemd reload ediliyor..."
+echo "🔄 Systemd reload ve servis başlatılıyor..."
 sudo systemctl daemon-reload
-
-echo "🚀 Servisler enable yapılıyor ve başlatılıyor..."
 sudo systemctl enable postgresql-enfipro
 sudo systemctl enable django-enfipro
 sudo systemctl enable serialjs-enfipro
-
 sudo systemctl start postgresql-enfipro
 sudo systemctl start django-enfipro
 sudo systemctl start serialjs-enfipro
 
-### 12. ANYDESK KURULUMU ###
-echo "🖥 AnyDesk kuruluyor..."
-wget -qO - https://keys.anydesk.com/repos/DEB-GPG-KEY | sudo apt-key add -
-echo "deb http://deb.anydesk.com/ all main" | sudo tee /etc/apt/sources.list.d/anydesk.list
-sudo apt update
-sudo apt install -y anydesk
+### 14. USB YAZICI & SERIAL PORT AYARLARI ###
+echo "🔧 USB yazıcı ve serial port izinleri ayarlanıyor..."
+sudo tee /etc/udev/rules.d/99-usblp.rules > /dev/null <<EOL
+SUBSYSTEM=="usb", ATTR{idVendor}=="0fe6", ATTR{idProduct}=="8800", MODE="0666", GROUP="lp"
+EOL
 
-### 13. SİSTEMİ GÜNCELLE ###
-echo "🛠 Sistem güncelleniyor..."
-sudo apt update
-sudo apt upgrade -y
-sudo apt full-upgrade -y
-sudo apt autoremove --purge -y
+sudo tee /etc/udev/rules.d/99-serial-permissions.rules > /dev/null <<EOL
+KERNEL=="ttyS0", MODE="0666"
+KERNEL=="ttyS1", MODE="0666"
+EOL
 
-### 14. KERNEL ve LINUX-IMAGE BİLGİSİ ###
-echo "🛠 Kernel ve Linux image durumu:"
-uname -r
-dpkg --list | grep linux-image
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+sudo usermod -aG lp $USER
+sudo chmod 666 /dev/ttyS0
+sudo chmod 666 /dev/ttyS1
 
-### TAMAMLANDI ###
+### 15. SAMBA SHARE ###
+echo "🔧 Samba kuruluyor ve enfiproV2 klasörü paylaşılıyor..."
+sudo systemctl enable smbd
+sudo systemctl start smbd
+sudo tee -a /etc/samba/smb.conf > /dev/null <<EOL
+
+[enfiproV2]
+comment = enfiproV2 Share
+path = /home/pi/enfiproV2
+browseable = yes
+writeable = yes
+guest ok = yes
+force user = pi
+create mask = 0777
+directory mask = 0777
+EOL
+
+sudo systemctl restart smbd
+
+### 16. GOOGLE CHROME KURULUMU ###
+echo "🌐 Google Chrome kuruluyor..."
+wget -O google-chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+sudo dpkg -i google-chrome.deb || sudo apt --fix-broken install -y
+sudo apt --fix-broken install -y
+sudo apt remove -y chromium --purge
+sudo apt autoremove -y
+
+### 17. LXDE AUTOSTART (CHROME AÇILSIN) ###
+echo "🖥 LXDE autostart dosyası hazırlanıyor..."
+mkdir -p /home/pi/.config/lxsession/LXDE-pi
+sudo tee /home/pi/.config/lxsession/LXDE-pi/autostart > /dev/null <<EOL
+@lxpanel --profile LXDE-pi
+@pcmanfm --desktop --profile LXDE-pi
+@/usr/bin/google-chrome --noerrdialogs --disable-infobars --kiosk http://localhost:8000
+EOL
+chown pi:pi /home/pi/.config/lxsession/LXDE-pi/autostart
+
+### 18. BİTİRME ###
 echo ""
-echo "🎯 Tüm kurulum başarıyla tamamlandı!"
-echo "🌍 Django Server: http://<Raspberry-IP>:8000/"
-echo "🐘 PostgreSQL çalışıyor"
-echo "🟢 Serial.js çalışıyor"
-echo "🖥 AnyDesk kurulumu tamamlandı"
-echo ""
-echo "🚀 Artık sistem otomatik başlıyor!"
+echo "🎯 Kurulum başarıyla tamamlandı!"
+echo "♻️ Sistem 10 saniye içinde yeniden başlatılacak..."
+sleep 10
+sudo reboot
