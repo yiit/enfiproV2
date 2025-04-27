@@ -17,7 +17,7 @@ urlpatterns = [
     # Sales
     path('sales/', include('sales.urls')),
     # Database
-    path('database/', include('database.urls')),
+    #path('database/', include('database.urls')),
     # tasarim
     path('tasarim/', include('tasarim.urls')),
     path('database/', include('database.urls', namespace='database')),  # 'database' namespace kullan
