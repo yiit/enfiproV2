@@ -3,6 +3,8 @@
 # Hata durumunda scripti durdur
 set -e
 
+git clone git@github.com:yiit/enfiproV2.git
+
 ### 1. GEREKLİ PAKETLER ###
 echo "\U0001F449 Gerekli Linux paketleri kuruluyor..."
 sudo apt update
@@ -12,7 +14,7 @@ sudo apt install -y wget build-essential libssl-dev zlib1g-dev libbz2-dev librea
 
 ### 2. ENFIPROV2 KLASÖRÜ ###
 echo "\U0001F449 ~/enfiproV2 klasörü oluşturuluyor..."
-mkdir -p ~/enfiproV2
+#mkdir -p ~/enfiproV2
 cd ~/enfiproV2
 
 ### 3. PYTHON 3.13.1 KURULUMU ###
