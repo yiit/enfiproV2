@@ -213,7 +213,24 @@ sudo dpkg -i google-chrome.deb || sudo apt --fix-broken install -y
 sudo apt autoremove -y
 sudo apt remove -y chromium-browser
 sudo systemctl restart smbd
+
+echo "📁 Samba paylaşımı smb.conf dosyasına ekleniyor..."
+sudo tee -a /etc/samba/smb.conf > /dev/null <<EOL
+
+[enfiproV2]
+   comment = enfiproV2
+   path = /home/pi/enfiproV2
+   browseable = yes
+   writeable = yes
+   guest ok = yes
+   force user = pi
+   create mask = 0777
+   directory mask = 0777
+EOL
+
+sudo systemctl restart smbd
 read -p "👉 Devam etmek için ENTER'a basın..."
+
 
 #########################################
 # 15. ANYDESK
