@@ -7,6 +7,17 @@ from django.shortcuts import render
 from products.models import Product, Category
 from sales.models import Sale
 
+def get_anydesk_id_from_file():
+    config_path = "/etc/anydesk/system.conf"
+    try:
+        with open(config_path, 'r') as f:
+            for line in f:
+                if line.startswith("ad.anynet.id="):
+                    return line.strip().split("=")[1]
+    except Exception as e:
+        print(f"AnyDesk ID okunamadı: {e}")
+    return "Bilinmiyor"
+
 
 @login_required(login_url="/accounts/login/")
 def index(request):
@@ -14,6 +25,8 @@ def index(request):
 
     year = today.year
     monthly_earnings = []
+    
+    anydesk_id = get_anydesk_id_from_file()
 
     # Calculate earnings per month
     for month in range(1, 13):
@@ -37,7 +50,7 @@ def index(request):
     top_products_quantity = []
 
     for p in top_products:
-        top_products_names.append(p.name)
+        top_products_names.append(p.urun_ismi1)
         top_products_quantity.append(p.quantity_sum)
 
     print(top_products_names)
@@ -53,5 +66,6 @@ def index(request):
         "top_products_names": json.dumps(top_products_names),
         "top_products_names_list": top_products_names,
         "top_products_quantity": json.dumps(top_products_quantity),
+        "anydesk_code": anydesk_id,
     }
     return render(request, "pos/index.html", context)
