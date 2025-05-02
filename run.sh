@@ -258,6 +258,19 @@ EOL
 sudo chown pi:pi /home/pi/.config/lxsession/LXDE-pi/autostart
 read -p "👉 Devam etmek için ENTER'a basın..."
 
+echo "🖥 LXDE desktop.conf yapılandırılıyor..."
+sudo tee /home/pi/.config/lxsession/LXDE-pi/desktop.conf > /dev/null <<EOL
+[GTK]
+sNet/ThemeName=PiXflat
+sGtk/ColorScheme=selected_bg_color:#1B70D7\nselected_fg_color:#FFFFFF\nbar_bg_color:#FFFFFF\nbar_fg_color:#000000\n
+sGtk/FontName=Piboto Condensed, Bold Condensed 11
+iGtk/ToolbarIconSize=3
+sGtk/IconSizes=gtk-large-toolbar=24,24
+iGtk/CursorThemeSize=24
+EOL
+sudo chown pi:pi /home/pi/.config/lxsession/LXDE-pi/desktop.conf
+read -p "👉 Devam etmek için ENTER'a basın..."
+
 sudo apt autoremove
 
 #########################################
