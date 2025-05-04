@@ -72,13 +72,12 @@
 
         <!-- Veriyi İçe Aktar -->
         <h2>Veriyi İçe Aktar</h2>
-        <form method="post" action="{% url 'database:import_data' %}">
-            {% csrf_token %}
-            <label for="file_name">Dosya Adı:</label>
-            <input type="text" id="file_name" name="file_name" placeholder="Product_data.json" required>
+<form method="post" enctype="multipart/form-data" action="{% url 'database:import_data' %}">
+    {% csrf_token %}
+    <input type="file" name="json_file" accept=".json" required>
+    <button type="submit">Yükle ve Aktar</button>
+</form>
 
-            <button type="submit">Veriyi İçe Aktar</button>
-        </form>
 
         <!-- Veriyi Uzak Sisteme Gönder -->
 <!-- Veriyi Uzak Sisteme Gönder -->

@@ -271,6 +271,22 @@ EOL
 sudo chown pi:pi /home/pi/.config/lxsession/LXDE-pi/desktop.conf
 read -p "👉 Devam etmek için ENTER'a basın..."
 
+echo "🖥 LXDE desktop-items-0.conf yapılandırılıyor..."
+sudo tee /home/pi/.config/pcmanfm/LXDE-pi/desktop-items-0.conf > /dev/null <<EOL
+[*]
+desktop_bg=#FFFFFF
+desktop_shadow=#FFFFFF
+desktop_fg=#000000
+desktop_font=Piboto Condensed, Bold Condensed 11
+wallpaper=/home/pi/enfiproV2/enfiproV2/static/img/endutek.png
+wallpaper_mode=center
+show_documents=0
+show_trash=1
+show_mounts=1
+EOL
+sudo chown pi:pi /home/pi/.config/pcmanfm/LXDE-pi/desktop-items-0.conf
+read -p "👉 Devam etmek için ENTER'a basın..."
+
 sudo apt autoremove
 
 #########################################

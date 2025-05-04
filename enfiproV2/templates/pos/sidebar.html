@@ -64,21 +64,22 @@
     <!-- Divider -->
     <hr class="sidebar-divider my-0">
 
-        <!-- Database Yönetimi -->
-        <li class="nav-item">
-            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseDatabase"
-                aria-expanded="true" aria-controls="collapseDatabase">
-                <i class="fas fa-database"></i>
-                <span>Database</span>
-            </a>
-            <div id="collapseDatabase" class="collapse" aria-labelledby="headingDatabase" data-parent="#accordionSidebar">
-                <div class="bg-white py-2 collapse-inner rounded">
-                    <a class="collapse-item" href="#" data-toggle="modal" data-target="#importModal">Veri İçe Aktar</a>
-                    <a class="collapse-item" href="#" data-toggle="modal" data-target="#exportModal">Veri Dışa Aktar</a>
-                    <a class="collapse-item" href="#" data-toggle="modal" data-target="#updateRemoteModal">Uzak Sistemi Güncelle</a>
-                </div>
-            </div>
-        </li>
+<!-- Database Yönetimi -->
+<li class="nav-item">
+    <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseDatabase"
+        aria-expanded="true" aria-controls="collapseDatabase">
+        <i class="fas fa-database"></i>
+        <span>Database</span>
+    </a>
+    <div id="collapseDatabase" class="collapse" aria-labelledby="headingDatabase" data-parent="#accordionSidebar">
+        <div class="bg-white py-2 collapse-inner rounded">
+            <a class="collapse-item" href="{% url 'database:data_management' %}">Veri Yönetimi</a>
+            <a class="collapse-item" href="{% url 'database:data_management' %}#export">Veri Dışa Aktar</a>
+            <a class="collapse-item" href="{% url 'database:data_management' %}#remote">Uzak Sistemi Güncelle</a>
+        </div>
+    </div>
+</li>
+
     
         <hr class="sidebar-divider my-0">
 
