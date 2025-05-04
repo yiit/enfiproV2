@@ -56,49 +56,43 @@ def export_data(request):
 
 @csrf_exempt
 def import_data(request):
-    file_name = request.POST.get('file_name', None)
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Sadece POST isteği kabul edilir.'}, status=405)
 
-    if not file_name:
-        return JsonResponse({'error': 'Dosya adı belirtilmelidir.'}, status=400)
+    uploaded_file = request.FILES.get('json_file')
+    if not uploaded_file:
+        return JsonResponse({'error': 'Bir JSON dosyası yüklenmelidir.'}, status=400)
 
-    safe_file_name = get_valid_filename(file_name)
-    file_path = os.path.join(settings.MEDIA_ROOT, safe_file_name)
-    if not os.path.exists(file_path):
-        return JsonResponse({'error': f"{file_name} dosyası bulunamadı."}, status=404)
-
-    from products.models import Category
     try:
-        # Veritabanındaki ilk kategoriyi varsayılan olarak al
+        data = json.load(uploaded_file)
+
+        from products.models import Category
         default_category = Category.objects.first()
         if not default_category:
             return JsonResponse({'error': 'Veritabanında en az bir kategori bulunmalıdır.'}, status=500)
 
-        with open(file_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-            
-            # Kategori ID'si olmayan veya geçersiz olan ürünler için varsayılan kategori ID'sini ayarla
-            for item in data:
-                if item['model'] == 'products.product':
-                    category_id = item['fields'].get('category')
-                    if not Category.objects.filter(id=category_id).exists():
-                        item['fields']['category'] = default_category.id
-                        print(f"🔄 Kategori ID'si bulunamadı, varsayılan kategori ({default_category.id}) atandı.")
+        for item in data:
+            if item['model'] == 'products.product':
+                category_id = item['fields'].get('category')
+                if not Category.objects.filter(id=category_id).exists():
+                    item['fields']['category'] = default_category.id
+                    print(f"🔄 Kategori ID'si bulunamadı, varsayılan kategori ({default_category.id}) atandı.")
 
-        # Geçici olarak düzeltilmiş JSON dosyasını kaydet
-        temp_file_path = os.path.join(settings.MEDIA_ROOT, 'temp_fixed_data.json')
-        with open(temp_file_path, 'w', encoding='utf-8') as f:
+        # Geçici olarak kaydet ve yükle
+        os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
+        temp_path = os.path.join(settings.MEDIA_ROOT, 'temp_upload.json')
+        with open(temp_path, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
 
-    except Exception as e:
-        return JsonResponse({'error': f"Kategori güncelleme hatası: {str(e)}"}, status=500)
+        call_command('loaddata', temp_path)
+        os.remove(temp_path)
 
-    # JSON dosyasını içe aktar
-    try:
-        call_command('loaddata', temp_file_path)
-        os.remove(temp_file_path)  # Geçici dosyayı sil
-        return JsonResponse({'message': f"{file_name} başarıyla içe aktarıldı."})
+        return JsonResponse({'message': 'Veri başarıyla içe aktarıldı.'})
+    
+    except json.JSONDecodeError as e:
+        return JsonResponse({'error': f'Geçersiz JSON formatı: {str(e)}'}, status=400)
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        return JsonResponse({'error': f'İçe aktarma hatası: {str(e)}'}, status=500)
 
 
 
